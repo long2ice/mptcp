@@ -1,0 +1,47 @@
+name: Build and Upload Binaries
+
+on: [push]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@nightly
+
+            - name: Cache cargo registry
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-
+
+            - name: Build client binary
+              run: cargo build --release -p cli --bin client
+
+            - name: Build server binary
+              run: cargo build --release -p cli --bin server
+
+            - name: Upload client binary
+              uses: actions/upload-artifact@v4
+              with:
+                  name: client
+                  path: target/release/client
+                  retention-days: 30
+
+            - name: Upload server binary
+              uses: actions/upload-artifact@v4
+              with:
+                  name: server
+                  path: target/release/server
+                  retention-days: 30
